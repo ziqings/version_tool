@@ -2,7 +2,7 @@
 
 pub struct ZLText<'a>
 {
-    content: &'a str,
+    //content: &'a str,
     lines: Vec<&'a str>,
 }
 
@@ -24,7 +24,7 @@ impl<'a> ZLText<'a>
 
         return ZLText
         {
-            content: cstr,
+            //content: cstr,
             lines,
         };
     }
