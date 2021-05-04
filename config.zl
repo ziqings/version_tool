@@ -1,0 +1,14 @@
+
+
+
+#ignore_scan_extension
+@.svn
+@.meta
+@.DS_Store
+@.db
+@.manifest
+@.gitattributes
+
+
+
+
