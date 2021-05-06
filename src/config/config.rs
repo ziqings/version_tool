@@ -4,6 +4,7 @@ pub mod Config
 {
 	use std::fs;
 	use crate::utils::ZLText;
+	use crate::common::Global;
 
 	static mut m_ignore_scan_extension : Vec<String> = Vec::new();
 	static mut m_ignore_zip_extension : Vec<String> = Vec::new();
@@ -126,6 +127,34 @@ pub mod Config
 		}
 
 		return false;
+	}
+
+	pub fn check_file_fpt(path: &str) -> Global::FileProcessType
+	{
+		let arr: Vec<&str> = path.split('.').collect();
+		if arr.len() > 1
+		{
+			let ext = format!(".{}", arr[1]);
+
+			unsafe
+			{
+				let r1 = m_ignore_encrypt_extension.iter().position(|ii| *ii == ext);
+				match r1
+				{
+					Some(index) => return Global::FileProcessType::NONE,
+						None => {}
+				}
+
+				let r2 = m_ignore_zip_extension.iter().position(|ii| *ii == ext);
+				match r2
+				{
+					Some(index) => return Global::FileProcessType::ENCRYPT,
+						None => {}
+				}
+			}
+		}
+
+		return Global::FileProcessType::ENCRYPT_ZIP;
 	}
 }
 

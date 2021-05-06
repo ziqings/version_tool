@@ -10,6 +10,7 @@ use std::io::prelude::*;
 
 //mod ThreadPool;
 
+mod common;
 mod utils;
 mod config;
 
@@ -48,5 +49,8 @@ fn main()
 
 		let re3 = Config::is_in_base("/lua/test");
 		println!("re3->{}", re3);
+
+		let re4 = Config::check_file_fpt("xxx/fff.bundle");
+		println!("re4->{}", re4);
     });
 }
