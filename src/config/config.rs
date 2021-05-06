@@ -121,7 +121,18 @@ pub mod Config
 				*/
 				if re 
 				{
-					return re;
+					//return re;
+					for vii in &m_ignore_base_regex
+					{
+						let vreg = regex::Regex::new(vii).unwrap();
+						let vre = vreg.is_match(&slp);
+						if vre
+						{
+							return false;
+						}
+					}
+
+					return true;
 				}
 			}
 		}
