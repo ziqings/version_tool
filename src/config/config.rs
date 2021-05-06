@@ -7,6 +7,7 @@ pub mod Config
 	use crate::common::Global;
 
 	static mut m_ignore_scan_extension : Vec<String> = Vec::new();
+	static mut m_ignore_scan_regex: Vec<String> = Vec::new();
 	static mut m_ignore_zip_extension : Vec<String> = Vec::new();
 	static mut m_ignore_encrypt_extension : Vec<String> = Vec::new();
 	static mut m_base_regex : Vec<String> = Vec::new();
@@ -28,6 +29,15 @@ pub mod Config
 			unsafe
 			{
 				m_ignore_scan_extension.push(String::from(ii));
+			}
+		}
+
+		let isr = zl.read("ignore_scan_regex");
+		for ii in isr
+		{
+			unsafe
+			{
+				m_ignore_scan_regex.push(String::from(ii));
 			}
 		}
 
@@ -68,6 +78,28 @@ pub mod Config
 				m_ignore_base_regex.push(ii.to_lowercase());
 			}
 		}
+	}
+
+	pub fn is_ignore_scan(path: &str) -> bool
+	{
+		let lp = path.to_lowercase();
+		let slp: &str = &lp[..];
+
+		unsafe
+		{
+			for ii in &m_ignore_scan_regex
+			{
+				let reg = regex::Regex::new(ii).unwrap();
+				let re = reg.is_match(&slp);
+				if re 
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+
 	}
 
 	pub fn is_ignore_scan_file(path : &str) -> bool

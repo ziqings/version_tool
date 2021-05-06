@@ -1,8 +1,10 @@
 
 
-
 pub mod Process
 {
+	//use scan::Scan;
+	use crate::exe::scan::Scan;
+
 	pub fn process(
 			src_path: &str, 
 			dest_path: &str, 
@@ -13,6 +15,10 @@ pub mod Process
 			lang: &str
 			)
 	{
+		let scan = Scan::new();
+		scan.run(
+			"./"
+		);
 	}
 }
 

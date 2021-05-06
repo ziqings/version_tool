@@ -62,6 +62,18 @@ pub mod Test
 
 				let vvf: VersionFile = json::decode(&encode_str).unwrap();
 				println!("vvf md5->{}", vvf.get_md5());
+
+
+				Process::process(
+						"",
+						"",
+						"",
+						"",
+						"",
+						"",
+						""
+						);
+
 		});
 
 	}

@@ -10,6 +10,10 @@
 @.gitattributes
 
 
+#ignore_scan_regex
+@/.git
+@/target/
+
 
 #ignore_zip_extension
 @.bundle

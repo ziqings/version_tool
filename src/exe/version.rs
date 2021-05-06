@@ -61,3 +61,13 @@ version_files: Vec<FullVersionFile>,
 }
 
 
+
+pub struct OriginFile
+{
+	full_path: String,
+	path: String,
+	size: i32,
+	md5: String,
+}
+
+
