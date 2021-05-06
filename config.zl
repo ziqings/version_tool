@@ -11,4 +11,21 @@
 
 
 
+#ignore_zip_extension
+@.bundle
+
+
+
+#ignore_encrypt_extension
+@.cxx
+
+
+
+#base_regex
+@/Lua
+
+
+
+#ignore_base_regex
+@/audio
 

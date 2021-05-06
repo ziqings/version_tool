@@ -42,5 +42,11 @@ fn main()
 
 		let re1 = Config::is_ignore_scan_file("dkdkdkdkkdkdkdk");
 		println!("re1->{}", re1);
+
+		let re2 = Config::is_in_base("audio/test");
+		println!("re2->{}", re2);
+
+		let re3 = Config::is_in_base("/lua/test");
+		println!("re3->{}", re3);
     });
 }
