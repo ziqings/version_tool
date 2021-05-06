@@ -15,7 +15,7 @@ pub mod Process
 			lang: &str
 			)
 	{
-		let scan = Scan::new();
+		let mut scan = Scan::new();
 		scan.run(
 			"./"
 		);
