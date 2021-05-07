@@ -136,7 +136,7 @@ pub mod Config
 		{
 			for ii in &m_base_regex
 			{
-				println!("base regex->{}", ii);
+				//println!("base regex->{}", ii);
 				//let re = pcre2::bytes::Regex::new(&ii[..]).unwrap().is_match(&lp.into_bytes());
 				//let re = pcre2::bytes::Regex::new(&ii[..]).unwrap().is_match(&lp_arr);
 				let reg = regex::Regex::new(ii).unwrap();

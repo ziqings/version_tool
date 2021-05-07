@@ -3,6 +3,7 @@
 use std::io::prelude::*;
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 use std::fs;
 use std::path::Path;
@@ -14,6 +15,7 @@ use crate::utils::*;
 
 use std::sync::Mutex;
 use std::sync::Arc;
+//use std::sync::RwLock;
 
 use std::fs::File;
 
@@ -22,6 +24,9 @@ use crypto::digest::Digest;
 
 use std::io::Write;
 
+use std::thread;
+use std::time;
+
 //#[macro_use]
 //extern crate arrayref;
 
@@ -29,9 +34,11 @@ use std::io::Write;
 
 pub struct Scan
 {
-	origins: HashMap<String, OriginFile>,
-	md5_origins: HashMap<String, Vec<OriginFile>>,
+	origins: Arc::<Mutex::<HashMap<String, Arc<OriginFile>>>>,
+	//md5_origins: Arc<Box<HashMap<String, Vec<Arc<OriginFile>>>>>,
+	md5_origins: Arc<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>,
 	scanned: HashMap<Arc<String>, u8>,
+	base_files: Arc<Box<HashSet<String>>>,
 }
 
 
@@ -41,9 +48,11 @@ impl Scan
 	{
 		return Scan
 		{
-			origins: HashMap::new(),
-			md5_origins: HashMap::new(),
+			origins: Arc::new(Mutex::new(HashMap::new())),
+			//md5_origins: Arc::new(Box::new(HashMap::new())),
+			md5_origins: Arc::new(Mutex::new(HashMap::new())),
 			scanned: HashMap::new(),
+			base_files: Arc::new(Box::new(HashSet::new())),
 		};
 	}
 
@@ -94,7 +103,15 @@ impl Scan
 	}
 
 	//fn async_scan_file(&mut self, path: &str)
-	fn async_scan_file(path: Arc<String>)
+	fn async_scan_file(
+			path: Arc<String>, 
+			torigins: Arc<Mutex<HashMap<String, Arc<OriginFile>>>>, 
+			//tmd5_origins: &mut Arc<HashMap<String, Vec<Arc<OriginFile>>>>,
+			//tmd5_origins: Arc<Box<HashMap<String, Vec<Arc<OriginFile>>>>>,
+			tmd5_origins: Arc<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>,
+			//tbase_files: &mut Arc<HashSet<String>>
+			tbase_files: Arc<Box<HashSet<String>>>
+			)
 	{
 		let relative_path;
 		if path.starts_with("./")
@@ -114,6 +131,7 @@ impl Scan
 
 		let mut buffer = [0u8; 1024];
 		let mut rsize = metadata.len() as usize;
+		let fsize = rsize as u32;
 		//let mut buffer = vec![0u8; rsize];
 
 		let mut sh = Md5::new();
@@ -123,29 +141,29 @@ impl Scan
 			let len: usize = f.read(&mut buffer).unwrap();
 
 			/*
-			if len > 0
-			{
-				if len < 1024
-				{
-					/
-					println!("len->{},  {}, {}, {}, {}, {}", len, path.to_string(), buffer[0], buffer[1], buffer[2], buffer[3]);
-					let mut arr = vec![0u8; len];
-					//arr[..len].clone_from_slice(&buffer);
-					//arr.write(&buffer).unwrap();
-					//arr.write(&buffer[..]).unwrap();
-					//let arr = array_refs!(buffer, 0, len);
-					arr.copy_from_slice(&buffer[0..len]);
-					println!("arr->{}, {}, {}, {}, {}", path.to_string(), arr[0], arr[1], arr[2], arr[3]);
-					sh.input(&arr);
-					/
-					sh.input(&buffer[0..len]);
-				}
-				else
-				{
-					sh.input(&buffer);
-				}
+			   if len > 0
+			   {
+			   if len < 1024
+			   {
+			   /
+			   println!("len->{},  {}, {}, {}, {}, {}", len, path.to_string(), buffer[0], buffer[1], buffer[2], buffer[3]);
+			   let mut arr = vec![0u8; len];
+			//arr[..len].clone_from_slice(&buffer);
+			//arr.write(&buffer).unwrap();
+			//arr.write(&buffer[..]).unwrap();
+			//let arr = array_refs!(buffer, 0, len);
+			arr.copy_from_slice(&buffer[0..len]);
+			println!("arr->{}, {}, {}, {}, {}", path.to_string(), arr[0], arr[1], arr[2], arr[3]);
+			sh.input(&arr);
+			/
+			sh.input(&buffer[0..len]);
 			}
-			*/
+			else
+			{
+			sh.input(&buffer);
+			}
+			}
+			 */
 
 			sh.input(&buffer[0..len]);
 
@@ -153,7 +171,52 @@ impl Scan
 		}
 
 		let out_str = sh.result_str();
-		println!("md5 str->{},   {}", out_str, path.to_string());
+		//println!("md5 str->{},   {}", out_str, path.to_string());
+
+		let in_base = Config::is_in_base(&format!("/{}", relative_path)[..]);
+
+		let of = OriginFile::new(
+				path.to_string(),
+				relative_path.to_string(),
+				fsize,
+				out_str,
+				);
+		let aof = Arc::new(of);
+		let aaof = Arc::clone(&aof);
+
+		let mut tor = torigins.lock().unwrap();
+
+		if in_base
+		{
+			//let mut tbases = Arc::get_mut(tbase_files).unwrap();
+			//tbases.insert(relative_path.to_string());
+			let mut tbox = Arc::try_unwrap(tbase_files).unwrap();
+			let tbases = tbox.as_mut();
+			tbases.insert(relative_path.to_string());
+		}
+
+		tor.insert(relative_path.to_string(), aof);
+
+		/*
+		let mut md5_tor = Arc::get_mut(tmd5_origins).unwrap();
+		if !md5_tor.contains_key(&relative_path.to_string())
+		{
+			md5_tor.insert(relative_path.to_string(), Vec::new());
+		}
+		 */
+
+		//let mut md5_tbox: Box<HashMap<String, Vec<Arc<OriginFile>>>> = Arc::try_unwrap(tmd5_origins).unwrap();
+		//let md5_tor = md5_tbox.as_mut();
+
+		let mut md5_tor = tmd5_origins.lock().unwrap();
+		if !md5_tor.contains_key(&relative_path.to_string())
+		{
+			md5_tor.insert(relative_path.to_string(), Vec::new());
+		}
+
+		let mut lst = md5_tor.get_mut(&relative_path.to_string()).unwrap();
+
+		lst.push(aaof);
 	}
 
 	pub fn run(&mut self, src_root: &str) -> bool
@@ -222,11 +285,27 @@ impl Scan
 			{
 				let tlock = Arc::clone(&lock);
 				let tk = Arc::clone(&k);
+				let torigins = Arc::clone(&self.origins);
+				let tmd5_origins = Arc::clone(&self.md5_origins);
+				let tbase_files = Arc::clone(&self.base_files);
 				pool.execute(move ||{
-						Scan::async_scan_file(tk);
+						Scan::async_scan_file(tk, torigins, tmd5_origins, tbase_files);
 						tlock.lock().unwrap().exe();
 						});
 			}
+
+			let total = self.scanned.len() as i32;
+
+			println!("before wait->{}, {}", lock.lock().unwrap().get(), total);
+
+			while(lock.lock().unwrap().get() != total)
+			{
+				let ten = time::Duration::from_millis(10);
+				thread::sleep(ten);
+			}
+
+
+			println!("scan wait over->{}", lock.lock().unwrap().get());
 		}
 
 		return true;

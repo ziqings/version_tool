@@ -66,8 +66,27 @@ pub struct OriginFile
 {
 	full_path: String,
 	path: String,
-	size: i32,
+	size: u32,
 	md5: String,
 }
 
+
+impl OriginFile
+{
+	pub fn new(
+		full_path: String,
+		path: String,
+		size: u32,
+		md5: String
+	) -> Self
+	{
+		return OriginFile
+		{
+			full_path,
+			path,
+			size,
+			md5,
+		};
+	}
+}
 
