@@ -21,7 +21,7 @@ struct Worker
 }
 
 #[warn(non_upper_case_globals)]
-static mut GLOBAL_WORK_ID: usize = 10;
+static mut GLOBAL_WORK_ID: usize = 0;
 
 
 impl Worker
@@ -46,7 +46,7 @@ impl Worker
                 {
                     Message::NewJob(job) => 
                     {
-                        println!("worker thread execute job->{}", id);
+                        //println!("worker thread execute job->{}", id);
                         job();
                     },
                     Message::Terminate =>
