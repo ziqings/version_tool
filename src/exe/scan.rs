@@ -56,6 +56,23 @@ impl Scan
 		};
 	}
 
+	pub fn get_base_files(&self)-> Box<HashSet<String>>
+	{
+		//return Arc::try_unwrap(self.base_files).unwrap();
+
+		let t = Arc::clone(&self.base_files);
+		let mut tbox = Arc::try_unwrap(t).unwrap();
+		return tbox;
+	}
+
+	/*
+	pub fn get_origins(&self) -> HashMap<String, Arc<OriginFile>>
+	{
+		let t = Arc::clone(&self.origins);
+		return t.lock().unwrap();
+	}
+	*/
+
 	//fn list_files(scan: &mut Scan, dir: &Path, cb: &dyn Fn(&mut Scan, String))
 	//fn list_files(&mut self, dir: &Path, cb: &mut dyn FnMut(String))
 	fn list_files(&mut self, dir: &Path)
