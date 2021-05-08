@@ -2,11 +2,32 @@
 
 pub mod Process
 {
-	//use scan::Scan;
 	use crate::exe::scan::Scan;
 
 	use std::sync::Arc;
 	use std::collections::HashSet;
+	use std::path::Path;
+	use std::fs;
+
+	use rustc_serialize::json;
+
+	use crate::exe::version::*;
+
+	fn read_full_version() -> Option<FullVersion>
+	{
+		let v = Path::new("full_version.json");
+		if v.is_file()
+		{
+			let fstr = fs::read_to_string("").unwrap();
+			let fv: FullVersion = json::decode(&fstr).unwrap();
+
+			return Some(fv);
+		}
+		else
+		{
+			return Option::<FullVersion>::None;
+		}
+	}
 
 	pub fn process(
 			src_path: &str, 
@@ -18,21 +39,26 @@ pub mod Process
 			lang: &str
 			)
 	{
-		let mut scan = Scan::new();
+		let fv = read_full_version();
+
+		let mut scan = Scan::new(fv);
 
 		scan.run(
 			"./"
 		);
 
-		let vv = scan.get_base_files();
-		let mut v = vv.upgrade().unwrap();
+		let bases = scan.get_base_files().upgrade().unwrap();
+		let origins = scan.get_origins().upgrade().unwrap();
 
-		let xx = scan.get_origins();
-		let x = xx.upgrade().unwrap();
+		println!("b f c->{}, {}", bases.lock().unwrap().len(), origins.lock().unwrap().len());
 
-		println!("b f c->{}, {}", v.lock().unwrap().len(), x.lock().unwrap().len());
-
-
+		if origins.lock().unwrap().len() == 0
+		{
+			println!("no resource need to be updated");
+		}
+		else
+		{
+		}
 	}
 }
 

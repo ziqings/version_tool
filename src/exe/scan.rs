@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
-use super::version::OriginFile;
+use super::version::*;
 
 use crate::config::Config;
 use crate::utils::*;
@@ -17,6 +17,8 @@ use std::sync::Mutex;
 use std::sync::Arc;
 use std::sync::Weak;
 //use std::sync::RwLock;
+
+use std::rc::Rc;
 
 use std::fs::File;
 
@@ -39,12 +41,14 @@ pub struct Scan
 	md5_origins: Arc<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>,
 	scanned: HashMap<Arc<String>, u8>,
 	base_files: Arc<Mutex<HashSet<String>>>,
+	full_version: Option<FullVersion>,
+	version_files: HashMap<Rc<String>, Rc<FullVersionFile>>,
 }
 
 
 impl Scan
 {
-	pub fn new() -> Self
+	pub fn new(fv: Option<FullVersion>) -> Self
 	{
 		return Scan
 		{
@@ -52,6 +56,8 @@ impl Scan
 			md5_origins: Arc::new(Mutex::new(HashMap::new())),
 			scanned: HashMap::new(),
 			base_files: Arc::new(Mutex::new(HashSet::new())),
+			full_version: fv,
+			version_files: HashMap::new(),
 		};
 	}
 
@@ -296,9 +302,32 @@ impl Scan
 			}
 
 			println!("scan wait over->{}, {}", lock.lock().unwrap().get(), self.base_files.lock().unwrap().len());
+
+			self.scan_over();
 		}
 
 		return true;
+	}
+
+	fn scan_over(&mut self)
+	{
+		if let Some(fv) = &self.full_version
+		{
+			for item in &fv.version_files
+			{
+				let p = Rc::clone(&item.version_file.path);
+				let kp = Rc::clone(&p);
+				let ph = Rc::try_unwrap(p).unwrap();
+				if let Some(v) = self.origins.lock().unwrap().get(&ph)
+				{
+					if v.md5 == item.origin_md5
+					{
+						let c_item = Rc::clone(item);
+						self.version_files.insert(kp, c_item);
+					}
+				}
+			}
+		}
 	}
 }
 
