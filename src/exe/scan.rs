@@ -15,6 +15,7 @@ use crate::utils::*;
 
 use std::sync::Mutex;
 use std::sync::Arc;
+use std::sync::Weak;
 //use std::sync::RwLock;
 
 use std::fs::File;
@@ -34,11 +35,10 @@ use std::time;
 
 pub struct Scan
 {
-	origins: Arc::<Mutex::<HashMap<String, Arc<OriginFile>>>>,
-	//md5_origins: Arc<Box<HashMap<String, Vec<Arc<OriginFile>>>>>,
+	origins: Arc<Mutex<HashMap<String, Arc<OriginFile>>>>,
 	md5_origins: Arc<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>,
 	scanned: HashMap<Arc<String>, u8>,
-	base_files: Arc<Box<HashSet<String>>>,
+	base_files: Arc<Mutex<HashSet<String>>>,
 }
 
 
@@ -49,29 +49,21 @@ impl Scan
 		return Scan
 		{
 			origins: Arc::new(Mutex::new(HashMap::new())),
-			//md5_origins: Arc::new(Box::new(HashMap::new())),
 			md5_origins: Arc::new(Mutex::new(HashMap::new())),
 			scanned: HashMap::new(),
-			base_files: Arc::new(Box::new(HashSet::new())),
+			base_files: Arc::new(Mutex::new(HashSet::new())),
 		};
 	}
 
-	pub fn get_base_files(&self)-> Box<HashSet<String>>
+	pub fn get_base_files(&self)-> Weak<Mutex<HashSet<String>>>
 	{
-		//return Arc::try_unwrap(self.base_files).unwrap();
-
-		let t = Arc::clone(&self.base_files);
-		let mut tbox = Arc::try_unwrap(t).unwrap();
-		return tbox;
+		return Arc::downgrade(&self.base_files);
 	}
 
-	/*
-	pub fn get_origins(&self) -> HashMap<String, Arc<OriginFile>>
+	pub fn get_origins(&self) -> Weak<Mutex<HashMap<String, Arc<OriginFile>>>>
 	{
-		let t = Arc::clone(&self.origins);
-		return t.lock().unwrap();
+		return Arc::downgrade(&self.origins);
 	}
-	*/
 
 	//fn list_files(scan: &mut Scan, dir: &Path, cb: &dyn Fn(&mut Scan, String))
 	//fn list_files(&mut self, dir: &Path, cb: &mut dyn FnMut(String))
@@ -119,15 +111,11 @@ impl Scan
 		self.scanned.insert(rp, 1);
 	}
 
-	//fn async_scan_file(&mut self, path: &str)
 	fn async_scan_file(
 			path: Arc<String>, 
 			torigins: Arc<Mutex<HashMap<String, Arc<OriginFile>>>>, 
-			//tmd5_origins: &mut Arc<HashMap<String, Vec<Arc<OriginFile>>>>,
-			//tmd5_origins: Arc<Box<HashMap<String, Vec<Arc<OriginFile>>>>>,
 			tmd5_origins: Arc<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>,
-			//tbase_files: &mut Arc<HashSet<String>>
-			tbase_files: Arc<Box<HashSet<String>>>
+			tbase_files: Arc<Mutex<HashSet<String>>>
 			)
 	{
 		let relative_path;
@@ -205,25 +193,11 @@ impl Scan
 
 		if in_base
 		{
-			//let mut tbases = Arc::get_mut(tbase_files).unwrap();
-			//tbases.insert(relative_path.to_string());
-			let mut tbox = Arc::try_unwrap(tbase_files).unwrap();
-			let tbases = tbox.as_mut();
+			let mut tbases = tbase_files.lock().unwrap();
 			tbases.insert(relative_path.to_string());
 		}
 
 		tor.insert(relative_path.to_string(), aof);
-
-		/*
-		let mut md5_tor = Arc::get_mut(tmd5_origins).unwrap();
-		if !md5_tor.contains_key(&relative_path.to_string())
-		{
-			md5_tor.insert(relative_path.to_string(), Vec::new());
-		}
-		 */
-
-		//let mut md5_tbox: Box<HashMap<String, Vec<Arc<OriginFile>>>> = Arc::try_unwrap(tmd5_origins).unwrap();
-		//let md5_tor = md5_tbox.as_mut();
 
 		let mut md5_tor = tmd5_origins.lock().unwrap();
 		if !md5_tor.contains_key(&relative_path.to_string())
@@ -321,8 +295,7 @@ impl Scan
 				thread::sleep(ten);
 			}
 
-
-			println!("scan wait over->{}", lock.lock().unwrap().get());
+			println!("scan wait over->{}, {}", lock.lock().unwrap().get(), self.base_files.lock().unwrap().len());
 		}
 
 		return true;
@@ -338,7 +311,7 @@ impl MutexDo<i32> for IncreaseInt
 {
 	fn new() -> Self
 	{
-		return IncreaseInt
+		return IncreaseInt 
 		{
 num: 0
 		};
