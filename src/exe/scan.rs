@@ -324,6 +324,8 @@ impl Scan
 					{
 						let c_item = Rc::clone(item);
 						self.version_files.insert(kp, c_item);
+
+						self.origins.lock().unwrap().remove(&ph);
 					}
 				}
 			}
