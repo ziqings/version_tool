@@ -49,8 +49,9 @@ pub mod Process
 
 		let bases = scan.get_base_files().upgrade().unwrap();
 		let origins = scan.get_origins().upgrade().unwrap();
+		let md5_origins = scan.get_md5_origins().upgrade().unwrap();
 
-		println!("b f c->{}, {}", bases.lock().unwrap().len(), origins.lock().unwrap().len());
+		println!("b f c->{}, {}, {}", bases.lock().unwrap().len(), origins.lock().unwrap().len(), md5_origins.lock().unwrap().len());
 
 		if origins.lock().unwrap().len() == 0
 		{

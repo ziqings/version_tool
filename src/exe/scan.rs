@@ -61,6 +61,11 @@ impl Scan
 		};
 	}
 
+	pub fn get_md5_origins(&self) -> Weak<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>
+	{
+		return Arc::downgrade(&self.md5_origins);
+	}
+
 	pub fn get_base_files(&self)-> Weak<Mutex<HashSet<String>>>
 	{
 		return Arc::downgrade(&self.base_files);
