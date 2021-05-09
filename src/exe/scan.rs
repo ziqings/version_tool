@@ -182,6 +182,7 @@ impl Scan
 		}
 
 		let out_str = sh.result_str();
+		let md5_str = String::from(&out_str[..]);
 		//println!("md5 str->{},   {}", out_str, path.to_string());
 
 		let in_base = Config::is_in_base(&format!("/{}", relative_path)[..]);
@@ -206,14 +207,36 @@ impl Scan
 		tor.insert(relative_path.to_string(), aof);
 
 		let mut md5_tor = tmd5_origins.lock().unwrap();
-		if !md5_tor.contains_key(&relative_path.to_string())
+
+		let md5_key = Scan::get_md5_key(&relative_path, &md5_str[..]);
+		println!("md5 key->{}", md5_key);
+
+		if !md5_tor.contains_key(&md5_key)
 		{
-			md5_tor.insert(relative_path.to_string(), Vec::new());
+			md5_tor.insert(md5_key.to_string(), Vec::new());
 		}
 
-		let mut lst = md5_tor.get_mut(&relative_path.to_string()).unwrap();
+		let mut lst = md5_tor.get_mut(&md5_key).unwrap();
 
 		lst.push(aaof);
+	}
+
+	fn get_md5_key(relative_path: &str, md5: &str) -> String
+	{
+		//return "".to_string();
+		println!("get md5 key 0->{}", relative_path);
+		let index = relative_path.rfind('/');;
+
+		if let Some(ii) = index
+		{
+			let sp = relative_path.split_at(ii + 1);
+
+			return format!("{}{}", sp.0, md5);
+		}
+		else
+		{
+			return String::from(md5);
+		}
 	}
 
 	pub fn run(&mut self, src_root: &str) -> bool
@@ -326,6 +349,9 @@ impl Scan
 						self.version_files.insert(kp, c_item);
 
 						self.origins.lock().unwrap().remove(&ph);
+
+						let md5_key = Scan::get_md5_key(&item.version_file.path, &v.md5);
+						self.md5_origins.lock().unwrap().remove(&md5_key);
 					}
 				}
 			}
