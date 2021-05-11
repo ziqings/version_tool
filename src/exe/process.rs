@@ -68,7 +68,7 @@ pub mod Process
 			}
 		}
 
-		let torigins = Arc::clone(&origins);
+		let torigins = Arc::clone(&md5_origins);
 		let mut pdest = ProcessDest::new(torigins);
 
 		pdest.run();

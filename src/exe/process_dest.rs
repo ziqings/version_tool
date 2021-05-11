@@ -14,17 +14,21 @@ use crate::utils::*;
 
 pub struct ProcessDest
 {
-	origins: Arc<Mutex<HashMap<String, Arc<OriginFile>>>>,
+	md5_origins: Arc<Mutex<HashMap<String, Arc<RwLock<Vec<Arc<OriginFile>>>>>>>,
 }
 
 impl ProcessDest
 {
-	pub fn new(origins: Arc<Mutex<HashMap<String, Arc<OriginFile>>>>) -> Self
+	pub fn new(md5_origins: Arc<Mutex<HashMap<String, Arc<RwLock<Vec<Arc<OriginFile>>>>>>>) -> Self
 	{
 		return ProcessDest
 		{
-			origins,
+			md5_origins,
 		};
+	}
+
+	fn process(ofs: Arc<RwLock<Vec<Arc<OriginFile>>>>)
+	{
 	}
 
 	pub fn run(&self) -> bool
@@ -34,19 +38,21 @@ impl ProcessDest
 
 		let pool = ThreadPool::new(4);
 
-		for (k, v) in self.origins.lock().unwrap().iter()
+		for (k, v) in self.md5_origins.lock().unwrap().iter()
 		{
 			println!("process dest->{}", k);
 
 			let tlock = Arc::clone(&lock);
 			//let tk = Arc::new(k);
+			let torigins = Arc::new(v);
 
 			pool.execute(move || {
-			}
-			);
+				//ProcessDest::process(torigins);
+				tlock.lock().unwrap().exe();
+			});
 		}
 
-		let total = self.origins.lock().unwrap().len() as i32;
+		let total = self.md5_origins.lock().unwrap().len() as i32;
 		println!("process dest before wait->{}, {}", lock.lock().unwrap().get(), total);
 		while(lock.lock().unwrap().get() != total)
 		{
