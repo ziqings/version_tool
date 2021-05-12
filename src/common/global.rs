@@ -5,6 +5,7 @@
 pub mod Global
 {
 	use std::fmt;
+	use std::cmp;
 
 	pub enum FileProcessType
 	{
@@ -23,6 +24,14 @@ pub mod Global
 				FileProcessType::ENCRYPT=> write!(f, "1"),
 				FileProcessType::ENCRYPT_ZIP=> write!(f, "2"),
 			}
+		}
+	}
+
+	impl cmp::PartialEq for FileProcessType
+	{
+		fn eq(&self, r: &FileProcessType) -> bool
+		{
+			return self == r;
 		}
 	}
 }

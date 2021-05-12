@@ -63,7 +63,7 @@ pub struct FullVersion
 }
 
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Debug)]
 pub struct OriginFile
 {
 	pub full_path: String,

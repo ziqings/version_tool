@@ -8,6 +8,7 @@
 @.db
 @.manifest
 @.gitattributes
+@.swp
 
 
 #ignore_scan_regex
