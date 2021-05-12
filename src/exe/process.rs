@@ -3,6 +3,7 @@
 pub mod Process
 {
 	use crate::exe::scan::Scan;
+	use crate::exe::process_dest::ProcessDest;
 
 	use std::sync::Arc;
 	use std::collections::HashSet;
@@ -59,7 +60,18 @@ pub mod Process
 		}
 		else
 		{
+			println!("need updating count->{}", origins.lock().unwrap().len());
+
+			for (k, v) in origins.lock().unwrap().iter()
+			{
+				println!("need updating->{}", k);
+			}
 		}
+
+		let torigins = Arc::clone(&md5_origins);
+		let mut pdest = ProcessDest::new(torigins);
+
+		pdest.run();
 	}
 }
 

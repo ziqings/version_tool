@@ -9,6 +9,7 @@ use std::fs;
 use std::path::Path;
 
 use super::version::*;
+use super::mutex_increase_int::*;
 
 use crate::config::Config;
 use crate::utils::*;
@@ -16,7 +17,7 @@ use crate::utils::*;
 use std::sync::Mutex;
 use std::sync::Arc;
 use std::sync::Weak;
-//use std::sync::RwLock;
+use std::sync::RwLock;
 
 use std::rc::Rc;
 
@@ -38,7 +39,7 @@ use std::time;
 pub struct Scan
 {
 	origins: Arc<Mutex<HashMap<String, Arc<OriginFile>>>>,
-	md5_origins: Arc<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>,
+	md5_origins: Arc<Mutex<HashMap<String, Arc<RwLock<Vec<Arc<OriginFile>>>>>>>,
 	scanned: HashMap<Arc<String>, u8>,
 	base_files: Arc<Mutex<HashSet<String>>>,
 	full_version: Option<FullVersion>,
@@ -61,7 +62,7 @@ impl Scan
 		};
 	}
 
-	pub fn get_md5_origins(&self) -> Weak<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>
+	pub fn get_md5_origins(&self) -> Weak<Mutex<HashMap<String, Arc<RwLock<Vec<Arc<OriginFile>>>>>>>
 	{
 		return Arc::downgrade(&self.md5_origins);
 	}
@@ -125,7 +126,7 @@ impl Scan
 	fn async_scan_file(
 			path: Arc<String>, 
 			torigins: Arc<Mutex<HashMap<String, Arc<OriginFile>>>>, 
-			tmd5_origins: Arc<Mutex<HashMap<String, Vec<Arc<OriginFile>>>>>,
+			tmd5_origins: Arc<Mutex<HashMap<String, Arc<RwLock<Vec<Arc<OriginFile>>>>>>>,
 			tbase_files: Arc<Mutex<HashSet<String>>>
 			)
 	{
@@ -218,10 +219,10 @@ impl Scan
 
 		if !md5_tor.contains_key(&md5_key)
 		{
-			md5_tor.insert(md5_key.to_string(), Vec::new());
+			md5_tor.insert(md5_key.to_string(), Arc::new(RwLock::new(Vec::new())));
 		}
 
-		let mut lst = md5_tor.get_mut(&md5_key).unwrap();
+		let mut lst = md5_tor.get_mut(&md5_key).unwrap().write().unwrap();
 
 		lst.push(aaof);
 	}
@@ -364,29 +365,4 @@ impl Scan
 	}
 }
 
-struct IncreaseInt
-{
-num: i32,
-}
-
-impl MutexDo<i32> for IncreaseInt
-{
-	fn new() -> Self
-	{
-		return IncreaseInt 
-		{
-num: 0
-		};
-	}
-
-	fn exe(&mut self)
-	{
-		self.num = self.num + 1;;
-	}
-
-	fn get(&self) -> i32
-	{
-		return self.num;
-	}
-}
 

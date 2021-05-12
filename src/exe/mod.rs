@@ -19,3 +19,12 @@ mod process;
 
 pub use process::Process;
 
+
+mod process_dest;
+
+pub use process_dest::ProcessDest;
+
+mod mutex_increase_int;
+
+pub use mutex_increase_int::IncreaseInt;
+
