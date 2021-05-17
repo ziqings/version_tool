@@ -14,6 +14,7 @@
 #ignore_scan_regex
 @/.git
 @/target/
+@/tmp/
 
 
 #ignore_zip_extension

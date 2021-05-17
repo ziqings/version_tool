@@ -15,6 +15,9 @@ use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 use std::io::Seek;
+use std::io::BufWriter;
+
+//use std::slice::bytes;
 
 use super::version::*;
 use super::mutex_increase_int::*;
@@ -84,9 +87,9 @@ impl ProcessDest
 		}
 
 		let dir_path = format!("{}/{}", dest_root, relative_path);
-		println!("r p->{}", dir_path);
 
 		let p = Path::new(&dir_path);
+		println!("r p->{}, {:?}", dir_path, p);
 		if !p.exists()
 		{
 			fs::create_dir_all(p).unwrap();
@@ -110,34 +113,105 @@ impl ProcessDest
 		let options = zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
 
 		let fpt = Config::check_file_fpt(&of.full_path);
+
+		let mut databuf = [0u8; 100];
 		if fpt == Global::FileProcessType::ENCRYPT_ZIP
 		{
-			//let mut buf: Vec<u8> = Vec::with_capacity(data.len());
-			//let mut buf = [0u8; 65535];
-			let mut buf = [0u8; 2048];
-			let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf[..]));
-			let p = format!("./tmp/{}", of.md5);
-			zip.start_file(p, options);
-			//let data = fs::read(&of.full_path).unwrap();
-			//zip.write(&data[..]);
-
 			let mut f = File::open(&of.full_path).unwrap();
 
 			let metadata = f.metadata().unwrap();
 
 			let mut rsize = metadata.len() as usize;
 			let fsize = rsize as u32;
+
+
+			let cap = fsize as usize + 2048;
+
+			let mut buf: Vec<u8> = Vec::with_capacity(cap);
+			unsafe
+			{
+				buf.set_len(cap);
+			}
+
+			//let mut buf = [0u8; 65535];
+			//let mut buf = [0; 65535];
+			//let mut buf = [0u8; 2048];
+			let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf[..]));
+			let p = format!("./tmp/{}.z", of.md5);
+			/*
+			println!("zip p->{}", p);
+
+			   let ttp = Path::new(&p);
+			   if ttp.exists()
+			   {
+			   fs::remove_file(&p).unwrap();
+			   }
+
+			   let tf = fs::File::create(&p).unwrap();
+			   let mut zip = zip::ZipWriter::new(tf);
+			   */
+
+			zip.start_file(p, options).unwrap();
+			//zip.start_file(p, zip::write::FileOptions::default()).unwrap();
+
+			//let data = fs::read(&of.full_path).unwrap();
+			//zip.write(&data[..]);
 			let mut rbuf = [0u8; 1024];
 
 			while rsize > 0
 			{
 				let len = f.read(&mut rbuf).unwrap();
-				zip.write(&rbuf[0..len]);
+				//println!("read len->{}, {}", len, rsize);
+				let wlen = zip.write(&rbuf[0..len]).unwrap();
+				//println!("write len->{}, {}, {}", wlen, len, rsize);
 				rsize = rsize - len;
 			}
 
-			zip.finish();
+			let re = zip.finish().unwrap();
+			println!("zip result->{}, {}", re.position(), fsize);
+			//databuf = &buf[0..re.position()];
 		}
+		else
+		{
+			let mut f = File::open(&of.full_path).unwrap();
+
+			let metadata = f.metadata().unwrap();
+
+			let mut rsize = metadata.len() as usize;
+			let fsize = rsize as u32;
+
+			let mut vbuf: Vec<u8> = Vec::with_capacity(fsize as usize);
+			/*
+			let mut tbuf = buf.as_mut_slice();
+			let mut tbuflen = 0;
+			*/
+			let mut buf = BufWriter::with_capacity(fsize as usize, &mut vbuf[..]);
+
+			let mut rbuf = [0u8; 1024];
+
+			while rsize > 0
+			{
+				let len = f.read(&mut rbuf).unwrap();
+
+				//bytes::copy_memory(&tbuf[tbuflen..len], &rbuf[0..len]);
+				//tbuflen = tbuflen + len;
+
+				buf.write(&rbuf[0..len]);
+
+				//databuf = buf.buffer();
+
+				rsize = rsize - len;
+			}
+		}
+
+		if (fpt == Global::FileProcessType::ENCRYPT_ZIP) || (fpt == Global::FileProcessType::ENCRYPT)
+		{
+			SimpleEncrypt::encrypt(&databuf);
+		}
+
+		let dpp = format!("{}/{}", dest_root, of.path);
+		println!("dest path->{}", dpp);
+		fs::write(dpp, databuf).unwrap();
 	}
 
 	pub fn run(&self) -> bool

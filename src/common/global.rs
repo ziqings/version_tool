@@ -7,6 +7,7 @@ pub mod Global
 	use std::fmt;
 	use std::cmp;
 
+#[derive(PartialEq)]
 	pub enum FileProcessType
 	{
 		NONE,
@@ -27,13 +28,16 @@ pub mod Global
 		}
 	}
 
+	/*
 	impl cmp::PartialEq for FileProcessType
 	{
 		fn eq(&self, r: &FileProcessType) -> bool
 		{
-			return self == r;
+			println!("check eq");
+			return *self as i32  == *r as i32;
 		}
 	}
+	*/
 }
 
 
