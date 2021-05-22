@@ -15,6 +15,7 @@
 @/.git
 @/target/
 @/tmp/
+@/root/
 
 
 #ignore_zip_extension

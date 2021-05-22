@@ -110,24 +110,22 @@ impl ProcessDest
 
 		println!("ext->{:?}, {:?}", file_name, ext);
 
-		let options = zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+		let options = zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Bzip2);
 
 		let fpt = Config::check_file_fpt(&of.full_path);
 
-		let mut databuf = [0u8; 100];
+		let mut f = File::open(&of.full_path).unwrap();
+		let metadata = f.metadata().unwrap();
+		let mut rsize = metadata.len() as usize;
+		let fsize = rsize as u32;
+
+		let cap = fsize as usize + 2048;
+
+		let mut buf: Vec<u8> = Vec::with_capacity(cap);
+
+		let mut data_len = 0;
 		if fpt == Global::FileProcessType::ENCRYPT_ZIP
 		{
-			let mut f = File::open(&of.full_path).unwrap();
-
-			let metadata = f.metadata().unwrap();
-
-			let mut rsize = metadata.len() as usize;
-			let fsize = rsize as u32;
-
-
-			let cap = fsize as usize + 2048;
-
-			let mut buf: Vec<u8> = Vec::with_capacity(cap);
 			unsafe
 			{
 				buf.set_len(cap);
@@ -139,7 +137,7 @@ impl ProcessDest
 			let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf[..]));
 			let p = format!("./tmp/{}.z", of.md5);
 			/*
-			println!("zip p->{}", p);
+			   println!("zip p->{}", p);
 
 			   let ttp = Path::new(&p);
 			   if ttp.exists()
@@ -149,7 +147,7 @@ impl ProcessDest
 
 			   let tf = fs::File::create(&p).unwrap();
 			   let mut zip = zip::ZipWriter::new(tf);
-			   */
+			 */
 
 			zip.start_file(p, options).unwrap();
 			//zip.start_file(p, zip::write::FileOptions::default()).unwrap();
@@ -169,23 +167,27 @@ impl ProcessDest
 
 			let re = zip.finish().unwrap();
 			println!("zip result->{}, {}", re.position(), fsize);
-			//databuf = &buf[0..re.position()];
+			data_len = re.position() as usize;
+			//databuf = &re.get_ref()[0..pos];
+			//databuf = &buf[0..pos];
 		}
 		else
 		{
-			let mut f = File::open(&of.full_path).unwrap();
-
-			let metadata = f.metadata().unwrap();
-
-			let mut rsize = metadata.len() as usize;
-			let fsize = rsize as u32;
-
-			let mut vbuf: Vec<u8> = Vec::with_capacity(fsize as usize);
 			/*
-			let mut tbuf = buf.as_mut_slice();
-			let mut tbuflen = 0;
-			*/
-			let mut buf = BufWriter::with_capacity(fsize as usize, &mut vbuf[..]);
+			   let mut f = File::open(&of.full_path).unwrap();
+
+			   let metadata = f.metadata().unwrap();
+
+			   let mut rsize = metadata.len() as usize;
+			   let fsize = rsize as u32;
+
+				let mut vbuf: Vec<u8> = Vec::with_capacity(fsize as usize);
+			 */
+			/*
+			   let mut tbuf = buf.as_mut_slice();
+			   let mut tbuflen = 0;
+			 */
+			let mut bw_buf = BufWriter::with_capacity(fsize as usize, &mut buf[..]);
 
 			let mut rbuf = [0u8; 1024];
 
@@ -196,22 +198,26 @@ impl ProcessDest
 				//bytes::copy_memory(&tbuf[tbuflen..len], &rbuf[0..len]);
 				//tbuflen = tbuflen + len;
 
-				buf.write(&rbuf[0..len]);
+				bw_buf.write(&rbuf[0..len]);
 
 				//databuf = buf.buffer();
 
 				rsize = rsize - len;
 			}
+
+			data_len = fsize as usize;
 		}
 
 		if (fpt == Global::FileProcessType::ENCRYPT_ZIP) || (fpt == Global::FileProcessType::ENCRYPT)
 		{
-			SimpleEncrypt::encrypt(&databuf);
+			//SimpleEncrypt::encrypt(&databuf);
+			SimpleEncrypt::encrypt(&buf[0..data_len]);
 		}
 
 		let dpp = format!("{}/{}", dest_root, of.path);
 		println!("dest path->{}", dpp);
-		fs::write(dpp, databuf).unwrap();
+		//fs::write(dpp, databuf).unwrap();
+		fs::write(dpp, &buf[0..data_len]).unwrap();
 	}
 
 	pub fn run(&self) -> bool
