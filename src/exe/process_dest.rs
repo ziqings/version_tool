@@ -131,62 +131,25 @@ impl ProcessDest
 				buf.set_len(cap);
 			}
 
-			//let mut buf = [0u8; 65535];
-			//let mut buf = [0; 65535];
-			//let mut buf = [0u8; 2048];
 			let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf[..]));
 			let p = format!("./tmp/{}.z", of.md5);
-			/*
-			   println!("zip p->{}", p);
-
-			   let ttp = Path::new(&p);
-			   if ttp.exists()
-			   {
-			   fs::remove_file(&p).unwrap();
-			   }
-
-			   let tf = fs::File::create(&p).unwrap();
-			   let mut zip = zip::ZipWriter::new(tf);
-			 */
 
 			zip.start_file(p, options).unwrap();
-			//zip.start_file(p, zip::write::FileOptions::default()).unwrap();
-
-			//let data = fs::read(&of.full_path).unwrap();
-			//zip.write(&data[..]);
 			let mut rbuf = [0u8; 1024];
 
 			while rsize > 0
 			{
 				let len = f.read(&mut rbuf).unwrap();
-				//println!("read len->{}, {}", len, rsize);
 				let wlen = zip.write(&rbuf[0..len]).unwrap();
-				//println!("write len->{}, {}, {}", wlen, len, rsize);
 				rsize = rsize - len;
 			}
 
 			let re = zip.finish().unwrap();
 			println!("zip result->{}, {}", re.position(), fsize);
 			data_len = re.position() as usize;
-			//databuf = &re.get_ref()[0..pos];
-			//databuf = &buf[0..pos];
 		}
 		else
 		{
-			/*
-			   let mut f = File::open(&of.full_path).unwrap();
-
-			   let metadata = f.metadata().unwrap();
-
-			   let mut rsize = metadata.len() as usize;
-			   let fsize = rsize as u32;
-
-				let mut vbuf: Vec<u8> = Vec::with_capacity(fsize as usize);
-			 */
-			/*
-			   let mut tbuf = buf.as_mut_slice();
-			   let mut tbuflen = 0;
-			 */
 			let mut bw_buf = BufWriter::with_capacity(fsize as usize, &mut buf[..]);
 
 			let mut rbuf = [0u8; 1024];
