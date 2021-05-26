@@ -36,6 +36,8 @@ impl<'a> ZLText<'a>
         let mut find: bool = false;
 
         let tkey = format!("#{}", key);
+
+		let mut check_bom: bool = false;
         for line in &self.lines
         {
             if line.len() < 2
@@ -53,6 +55,16 @@ impl<'a> ZLText<'a>
                 if *line == tkey
 				{
                     find = true;
+				}
+				else
+				{
+					if !&check_bom
+					{
+						if line.replace("\u{FEFF}", "") == tkey
+						{
+							find = true;
+						}
+					}
 				}
             }
 
