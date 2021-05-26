@@ -174,7 +174,7 @@ impl ProcessDest
 		if (fpt == Global::FileProcessType::ENCRYPT_ZIP) || (fpt == Global::FileProcessType::ENCRYPT)
 		{
 			//SimpleEncrypt::encrypt(&databuf);
-			SimpleEncrypt::encrypt(&buf[0..data_len]);
+			SimpleEncrypt::encrypt(&mut buf[0..data_len]);
 		}
 
 		let dpp = format!("{}/{}", dest_root, of.path);
